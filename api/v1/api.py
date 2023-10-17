@@ -31,4 +31,4 @@ async def calendar(request: Request):
             'date': '2023-10-18'
         },
     ]
-    return templates.TemplateResponse("calendar.html", {"request": request, 'events': events})
+    return templates.TemplateResponse("calendar2.html", {"request": request, 'events': events})
