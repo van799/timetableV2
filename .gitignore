@@ -14,7 +14,7 @@ rabbitmq_data
 logs-volume
 authorization
 postgres
-static
+
 
 .idea
 .DS_Store

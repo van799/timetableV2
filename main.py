@@ -10,7 +10,6 @@ from core.app_settings import app_settings
 
 app = FastAPI(
     title=app_settings.project_name,
-    default_response_class=ORJSONResponse,
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

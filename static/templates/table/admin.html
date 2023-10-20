@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}
+Расисание дежурств
+{% endblock %}
+{% block content %}
+
+
+<style>
+
+    td {
+        border-style: none;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div id="calendar" class="d-none d-md-flex col-md-4 col-lg-8 p-3"></div>
+
+        <!-- Cloudflare Pages Analytics -->
+        <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+                data-cf-beacon='{"token": "dc4641f860664c6e824b093274f50291"}'></script>
+        <!-- Cloudflare Pages Analytics -->
+
+        <div class="col-md-8 col-lg-4">
+
+            <div class="login d-flex py-3">
+                <div id='external-events'>
+                    <p>
+                        <strong>Список дежурных</strong>
+                    </p>
+
+                    <p>
+                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
+                        <div class='fc-event-main'>My Event 1</div>
+                    </div>
+                    <p>
+                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
+                        <div class='fc-event-main'>My Event 2</div>
+                    </div>
+
+                    <p>
+                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
+                        <div class='fc-event-main'>My Event 3</div>
+                    </div>
+
+                    <p>
+                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
+                        <div class='fc-event-main'>My Event 4</div>
+                    </div>
+                    <p>
+                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
+                        <div class='fc-event-main'>My Event 5</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var Calendar = FullCalendar.Calendar;
+      var Draggable = FullCalendar.Draggable;
+
+      var containerEl = document.getElementById('external-events');
+      var calendarEl = document.getElementById('calendar');
+      var checkbox = document.getElementById('drop-remove');
+
+      // initialize the external events
+      // -----------------------------------------------------------------
+
+      new Draggable(containerEl, {
+        itemSelector: '.fc-event',
+        eventData: function(eventEl) {
+          return {
+            title: eventEl.innerText
+          };
+        }
+      });
+
+      // initialize the calendar
+      // -----------------------------------------------------------------
+
+      var calendar = new Calendar(calendarEl, {
+        locale: "ru",
+        firstDay: 1,
+        height: "100",
+        initialView: "dayGridMonth",
+
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth'
+        },
+
+        selectable:true,
+        selectHelper:true,
+        select: function(start, end, allDay)
+        {
+         var title = prompt("Enter Event Title");
+         if(title)
+         {
+          var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
+          var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
+          $.ajax({
+           url:"/admin",
+           type:"POST",
+           data:{title:'title', start:'start', end:'end'},
+           success:function(data)
+           {
+             //alert(data)
+            alert("Added Successfully");
+            window.location.replace("/");
+           }
+          })
+         }
+        },
+
+
+        editable: true,
+        droppable: true, // this allows things to be dropped onto the calendar
+
+      });
+
+      calendar.render();
+    });
+</script>
+
+{% endblock content %}

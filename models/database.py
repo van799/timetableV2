@@ -1,7 +1,6 @@
 import asyncio
 import os
-from datetime import time
-
+import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
@@ -12,7 +11,7 @@ from models.database_models import CommonBase
 class Database:
     def __init__(self):
         if app_settings.is_debug:
-            self.path = f'sql_app_{hash(time.time())}.db'
+            self.path = f'sql_app_{hash(datetime.time())}.db'
             self.SQLALCHEMY_DATABASE_URL = f"sqlite+aiosqlite:///./{self.path}"
             self.engine = create_async_engine(
                 self.SQLALCHEMY_DATABASE_URL, echo=True, future=True

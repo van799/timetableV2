@@ -10,7 +10,7 @@ from models.database_models import TimeTable
 from repository.timetable_repository.timetable_repository import TimetableRepository
 
 router = APIRouter()
-
+database = Database()
 templates = Jinja2Templates(directory="static/templates")
 
 
@@ -32,35 +32,35 @@ async def index(request: Request):
     return templates.TemplateResponse("table/index.html", {"request": request, 'events': events})
 
 
-@router.post("/timetable",
+@router.get("/admin",
+            status_code=status.HTTP_201_CREATED,
+            response_class=HTMLResponse,
+            description='Панель адмнистратора')
+async def index(request: Request):
+    return templates.TemplateResponse("table/admin.html", {"request": request})
+
+
+@router.post("/admin",
              status_code=status.HTTP_201_CREATED,
-             response_model=RequestMessage,
-             description='Добавлене дежурств.')
-async def timetable(*,
-                    session: AsyncSession = Depends(Database.get_session),
-                    request: UsersRegistration,
-                    ):
-    file_repository = TimetableRepository(session)
-    timetable = TimeTable()
-    timetable.type_duty = request.type_duty
-    timetable.user = request.user
-    timetable.data = request.data
-
-    await file_repository.add(timetable)
-
-    return RequestMessage(message='расписание обновлено')
-
+             response_class=HTMLResponse,
+             description='Панель адмнистратора')
+async def index(request: Request):
+    print(request.data)
 
 # @router.post("/admin",
-#              response_model=RequestMessage,
 #              status_code=status.HTTP_201_CREATED,
-#              description='Регистрация пользователя')
-# async def register(*,
-#                    session: AsyncSession = Depends(database.get_session),
-#                    request: UsersRegistration
-#                    ) -> Any:
-#     user_authenticate = UserAuthenticator(session)
+#              response_model=RequestMessage,
+#              description='Добавлене дежурств.')
+# async def timetable(*,
+#                     session: AsyncSession = Depends(database.get_session),
+#                     request: TimeTable1,
+#                     ):
+#     file_repository = TimetableRepository(session)
+#     timetable = TimeTable()
+#     timetable.type_duty = request.type_duty
+#     timetable.user_id = request.user_id
+#     timetable.data = request.data
 #
-#     if await user_authenticate.register_user(request.username, request.password):
-#         return RequestMessage(message='Пользователь успешно зарегистрировался')
-#     return RequestMessage(message='Такой пользователь уже существует')
+#     await file_repository.add(timetable)
+#
+#     return templates.TemplateResponse("table/admin.html", {"request": request})
