@@ -28,7 +28,6 @@ class Users(CommonBase):
 class TimeTable(CommonBase):
     __tablename__ = 'timetable'
 
-    type_duty = Column(String(100))
-    data = Column(String(100))
-    user_id = Column(Text, ForeignKey("users.id"), nullable=False)
+    title = Column(Text, ForeignKey("users.id"), nullable=False)
+    start = Column(String(100))
     user = relationship('Users')

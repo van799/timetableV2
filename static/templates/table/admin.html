@@ -50,80 +50,97 @@
                     <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
                         <div class='fc-event-main'>My Event 5</div>
                     </div>
+                    <p>
+                    <div class="col-md-8 col-lg-4"> </p>
+                        <form action="{{ url_for('find_all_tasks') }}">
+                            <button type="submit" class="btn btn-primary">Сгенерить автоматически</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+</div>
 
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var Calendar = FullCalendar.Calendar;
-      var Draggable = FullCalendar.Draggable;
+     var Calendar = FullCalendar.Calendar;
+     var Draggable = FullCalendar.Draggable;
 
-      var containerEl = document.getElementById('external-events');
-      var calendarEl = document.getElementById('calendar');
-      var checkbox = document.getElementById('drop-remove');
-
-      // initialize the external events
-      // -----------------------------------------------------------------
-
-      new Draggable(containerEl, {
-        itemSelector: '.fc-event',
-        eventData: function(eventEl) {
-          return {
-            title: eventEl.innerText
-          };
-        }
-      });
-
-      // initialize the calendar
-      // -----------------------------------------------------------------
-
-      var calendar = new Calendar(calendarEl, {
-        locale: "ru",
-        firstDay: 1,
-        height: "100",
-        initialView: "dayGridMonth",
-
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth'
-        },
-
-        selectable:true,
-        selectHelper:true,
-        select: function(start, end, allDay)
-        {
-         var title = prompt("Enter Event Title");
-         if(title)
-         {
-          var start = $.fullCalendar.formatDate(start, "Y-MM-DD HH:mm:ss");
-          var end = $.fullCalendar.formatDate(end, "Y-MM-DD HH:mm:ss");
-          $.ajax({
-           url:"/admin",
-           type:"POST",
-           data:{title:'title', start:'start', end:'end'},
-           success:function(data)
-           {
-             //alert(data)
-            alert("Added Successfully");
-            window.location.replace("/");
-           }
-          })
-         }
-        },
+     var containerEl = document.getElementById('external-events');
+     var calendarEl = document.getElementById('calendar');
+     var checkbox = document.getElementById('drop-remove');
 
 
-        editable: true,
-        droppable: true, // this allows things to be dropped onto the calendar
+     // initialize the external events
+     // -----------------------------------------------------------------
 
-      });
+     new Draggable(containerEl, {
+       itemSelector: '.fc-event',
+       eventData: function(eventEl) {
+         return {
+           title: eventEl.innerText
+         };
+       }
+     });
 
-      calendar.render();
-    });
+     // initialize the calendar
+     // -----------------------------------------------------------------
+
+     var calendar = new Calendar(calendarEl, {
+      locale: "ru",
+       firstDay: 1,
+       height: "100",
+       initialView: "dayGridMonth",
+
+       headerToolbar: {
+         left: 'prev,next today',
+         center: 'title',
+         right: 'dayGridMonth'
+       },
+      events : [
+                {% for event in events %}
+                    {
+                    title : '{{event.todo}}',
+                    start : '{{event.date}}',
+                    },
+                {% endfor %}
+                ],
+    eventReceive: function(info) {
+
+     //get the bits of data we want to send into a simple object
+     var eventData = {
+       title: info.event.title,
+       start: info.event.startStr,
+       end: info.event.end
+     };
+     console.log(eventData);
+     //send the data via an AJAX POST request, and log any response which comes from the server
+     fetch('insert', {
+         method: 'POST',
+         headers: {
+           'Accept': 'application/json'
+         },
+         body: encodeFormData(eventData),
+         dataType : 'json'
+       })
+       .then(response => console.log(response))
+       .catch(error => console.log(error));
+   }
+ });
+ calendar.render();
+});
+
+const encodeFormData = (data) => {
+  var form_data = new FormData();
+
+  for (var key in data) {
+    form_data.append(key, data[key]);
+  }
+  return form_data;
+}
 </script>
 
 {% endblock content %}
