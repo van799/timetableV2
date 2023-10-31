@@ -14,7 +14,8 @@ from starlette.responses import RedirectResponse
 from api.v1.models.api_model import UsersRegistration, RequestMessage, Token
 from core.app_settings import app_settings
 from models.database import Database
-from models.database_models import TimeTable
+from models.database_models import TimeTable, Event
+from repository.timetable_repository.event_repository import EventRepository
 from repository.timetable_repository.timetable_repository import TimetableRepository
 from repository.user_authenticator import UserAuthenticator
 
@@ -93,16 +94,26 @@ async def admin(*,
                 session: AsyncSession = Depends(database.get_session),
                 request: Request
                 ):
-    events = []
+    events_title = []
+    events_data = []
     timetable_repository = TimetableRepository(session)
+    event_repository = EventRepository(session)
+
+    title_timetable = await event_repository.get_all()
+    for data in title_timetable:
+        events_title.append({
+            'title': data.title,
+        })
     data_timetable = await timetable_repository.get_all()
     for data in data_timetable:
-        events.append({
-            'todo': data.title,
-            'date': data.start
-        }
-        )
-    return templates.TemplateResponse("table/admin.html", {"request": request, 'events': events})
+        events_data.append({
+            'date': data.start,
+            'title_name': (await event_repository.get_by_id(data.title_id)).title
+        })
+    events = events_title + events_data
+    return templates.TemplateResponse("table/admin.html",
+                                      {"request": request,
+                                       'events': events})
 
 
 @router.get('/tasks')
@@ -117,8 +128,7 @@ def find_all_tasks(request: Request):
         events.append({
             'todo': random.choice(list_name),
             'date': data
-        }
-        )
+        })
     return templates.TemplateResponse("table/admin.html", {"request": request, 'events': events})
 
 
@@ -128,14 +138,19 @@ async def insert_timetable(*,
                            request: Request
                            ):
     timetable_repository = TimetableRepository(session)
-    timetable = TimeTable()
-    form_data_table = await request.form()
-    print(form_data_table['title'])
-    print(form_data_table['start'])
-    timetable.title = form_data_table['title']
+    event_repository = EventRepository(session)
 
+    timetable = TimeTable()
+
+    form_data_table = await request.form()
     timetable.start = form_data_table['start']
+    title = await event_repository.get_by_title(form_data_table['title'])
+    timetable.title_id = title.id
     await timetable_repository.add(timetable)
+
+    return RedirectResponse(
+        '/admin',
+        status_code=status.HTTP_302_FOUND)
 
 
 @router.post("/update")
@@ -144,14 +159,20 @@ async def update_timetable(*,
                            request: Request
                            ):
     timetable_repository = TimetableRepository(session)
+    event_repository = EventRepository(session)
+
     timetable = TimeTable()
+    event = Event()
+
     form_data_table = await request.form()
 
     await timetable_repository.delete_by_date(form_data_table['old_start'])
 
-    timetable.title = form_data_table['title']
+    event.title = form_data_table['title']
     timetable.start = form_data_table['start']
+
     await timetable_repository.add(timetable)
+    await event_repository.add(event)
 
 
 @router.post('/delete_task')
@@ -166,6 +187,26 @@ async def delete_task(*,
     result = await timetable_repository.get_by_data(form_data_table['data_delete'])
     if result is not None:
         await timetable_repository.delete_by_date(form_data_table['data_delete'])
+    return RedirectResponse(
+        '/admin',
+        status_code=status.HTTP_302_FOUND)
+
+
+@router.post('/add_task')
+async def add_task(*,
+                   session: AsyncSession = Depends(database.get_session),
+                   request: Request
+                   ):
+    event_repository = EventRepository(session)
+    form_data_table = await request.form()
+    event = Event()
+
+    event.title = form_data_table['title']
+
+    find_title = await event_repository.get_by_title(form_data_table['title'])
+    if find_title is None:
+        await event_repository.add(event)
+
     return RedirectResponse(
         '/admin',
         status_code=status.HTTP_302_FOUND)

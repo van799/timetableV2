@@ -1,71 +1,4 @@
-{% extends 'base.html' %}
-{% block title %}
-Расисание дежурств
-{% endblock %}
-{% block content %}
-
-
-<style>
-
-    td {
-        border-style: none;
-    }
-</style>
-<div class="container-fluid">
-    <div class="row">
-        <div id="calendar" class="d-none d-md-flex col-md-4 col-lg-8 p-3"></div>
-
-        <!-- Cloudflare Pages Analytics -->
-        <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
-                data-cf-beacon='{"token": "dc4641f860664c6e824b093274f50291"}'></script>
-        <!-- Cloudflare Pages Analytics -->
-
-        <div class="col-md-8 col-lg-4">
-
-            <div class="login d-flex py-3">
-                <div id='external-events'>
-                    <p>
-                        <strong>Список дежурных</strong>
-                    </p>
-                    {% for data in events %}
-                    <p>
-                    <div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'>
-                        <div class='fc-event-main'>{{ data.title }}</div>
-                    </div>
-                    <p>
-                    {% endfor %}
-
-                    <strong>Добавить дежурного:</strong>
-                    <form action="{{ url_for('add_task') }}" method="post">
-                        <input type="text" id="title" name="title" value="Фамилия Имя"><br>
-                        <div class="col-md-8 col-lg-4"> </p>
-                            <button type="submit" class="btn btn-primary">Добавить</button>
-                        </div>
-                    </form>
-
-                    <div class="col-md-8 col-lg-4"> </p>
-                        <form action="{{ url_for('find_all_tasks') }}">
-                            <button type="submit" class="btn btn-primary">Сгенерить автоматически</button>
-                        </form>
-                        <p>
-                    </div>
-
-
-                    <strong>Удалить указаную дату:</strong>
-                    <form action="{{ url_for('delete_task') }}" method="post">
-                        <input type="text" id="data_delete" name="data_delete" value="гггг-мм-дд"><br>
-                        <div class="col-md-8 col-lg-4"> </p>
-                            <button type="submit" class="btn btn-primary">Удалить</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
+   document.addEventListener('DOMContentLoaded', function() {
      var Calendar = FullCalendar.Calendar;
      var Draggable = FullCalendar.Draggable;
 
@@ -104,7 +37,7 @@
       events : [
                 {% for event in events %}
                     {
-                    title : '{{event.title_name}}',
+                    title : '{{event.todo}}',
                     start : '{{event.date}}',
                     },
                 {% endfor %}
@@ -170,6 +103,3 @@ const encodeFormData = (data) => {
   }
   return form_data;
 }
-</script>
-
-{% endblock content %}

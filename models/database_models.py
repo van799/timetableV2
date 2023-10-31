@@ -25,9 +25,15 @@ class Users(CommonBase):
     hashed_password = Column(String(100), nullable=False)
 
 
+class Event(CommonBase):
+    __tablename__ = 'event'
+
+    title = Column(String(100), unique=True)
+    timetable = relationship("TimeTable")
+
+
 class TimeTable(CommonBase):
     __tablename__ = 'timetable'
 
-    title = Column(Text, ForeignKey("users.id"), nullable=False)
     start = Column(String(100))
-    user = relationship('Users')
+    title_id = Column(Text, ForeignKey("event.id"), nullable=True)
