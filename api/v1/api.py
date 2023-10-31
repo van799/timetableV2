@@ -33,17 +33,26 @@ async def index(*,
                 session: AsyncSession = Depends(database.get_session),
                 request: Request
                 ):
-    events = []
+    events_title = []
+    events_data = []
     timetable_repository = TimetableRepository(session)
+    event_repository = EventRepository(session)
+
+    title_timetable = await event_repository.get_all()
+    for data in title_timetable:
+        events_title.append({
+            'title': data.title,
+        })
     data_timetable = await timetable_repository.get_all()
     for data in data_timetable:
-        events.append({
-            'todo': data.title,
-            'date': data.start
-        }
-        )
-
-    return templates.TemplateResponse("table/index.html", {"request": request, 'events': events})
+        events_data.append({
+            'date': data.start,
+            'title_name': (await event_repository.get_by_id(data.title_id)).title
+        })
+    events = events_title + events_data
+    return templates.TemplateResponse("table/index.html",
+                                      {"request": request,
+                                       'events': events})
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
