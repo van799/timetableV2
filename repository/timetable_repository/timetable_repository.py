@@ -1,5 +1,6 @@
 from models.database_models import TimeTable
 from repository.repository_base import RepositoryBase
+from sqlalchemy import select, update, insert
 
 
 class TimetableRepository(RepositoryBase):
@@ -8,20 +9,25 @@ class TimetableRepository(RepositoryBase):
     def __init__(self, engine):
         super().__init__(engine, TimeTable)
 
-    async def get_status_file_by_user_id(self, user_id: str) -> list:
-        return (await self._execute_statement(
-            self._get_subquery().filter(File.user_id == user_id))).scalars().all()
-
     async def update(self, model) -> None:
         values = dict(filter(lambda x: not x[0].startswith('_'), model.__dict__.items()))
         await self._execute_statement(
-            self._get_subquery_update().filter(File.filename == model.filename).values(values)
+            self._get_subquery_update().filter(TimeTable.title == model.title).values(values)
         )
 
-    async def get_status_file_by_filename(self, filename: str) -> list:
+    async def get_by_title(self, title: str) -> list:
         return (await self._execute_statement(
-            self._get_subquery().filter(File.filename == filename))).scalar_one_or_none()
+            self._get_subquery().filter(TimeTable.title == title))).scalar_one_or_none()
 
-    async def get_status_file_by_id_file(self, id: str) -> list:
+    async def get_by_data(self, start: str) -> list:
         return (await self._execute_statement(
-            self._get_subquery().filter(File.id == id))).scalar_one_or_none()
+            self._get_subquery().filter(TimeTable.start == start))).scalar_one_or_none()
+
+    async def get_by_id(self, id: str) -> list:
+        return (await self._execute_statement(
+            self._get_subquery().filter(TimeTable.id == id))).scalar_one_or_none()
+
+    async def delete_by_date(self, start: str) -> None:
+        await self._execute_statement(
+            self._get_subquery_update().where(TimeTable.start == start).values(deleted=True)
+        )

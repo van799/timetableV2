@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from http.client import HTTPException
 from typing import Any
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
@@ -122,14 +122,51 @@ def find_all_tasks(request: Request):
 
 
 @router.post("/insert")
-async def hello(*,
-                session: AsyncSession = Depends(database.get_session),
-                request: Request
-                ):
+async def insert_timetable(*,
+                           session: AsyncSession = Depends(database.get_session),
+                           request: Request
+                           ):
     timetable_repository = TimetableRepository(session)
     timetable = TimeTable()
     form_data_table = await request.form()
+    print(form_data_table['title'])
+    print(form_data_table['start'])
     timetable.title = form_data_table['title']
 
     timetable.start = form_data_table['start']
     await timetable_repository.add(timetable)
+
+
+@router.post("/update")
+async def update_timetable(*,
+                           session: AsyncSession = Depends(database.get_session),
+                           request: Request
+                           ):
+    timetable_repository = TimetableRepository(session)
+    timetable = TimeTable()
+    form_data_table = await request.form()
+
+    await timetable_repository.delete_by_date(form_data_table['old_start'])
+
+    timetable.title = form_data_table['title']
+    timetable.start = form_data_table['start']
+    await timetable_repository.add(timetable)
+
+
+@router.get('/delete_task')
+async def delete_task(*,
+                      session: AsyncSession = Depends(database.get_session),
+                      username=Form()
+                      ):
+    timetable_repository = TimetableRepository(session)
+    # timetable = TimeTable()
+    # form_data_table = await request.form()
+    print(username)
+    # await timetable_repository.delete_by_date(form_data_table['old_start'])
+    # for data in list_data:
+    #     events.append({
+    #         'todo': random.choice(list_name),
+    #         'date': data
+    #     }
+    #     )
+    # return templates.TemplateResponse("table/admin.html", {"request": request, 'events': events})

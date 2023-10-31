@@ -55,7 +55,17 @@
                         <form action="{{ url_for('find_all_tasks') }}">
                             <button type="submit" class="btn btn-primary">Сгенерить автоматически</button>
                         </form>
+                        <p>
                     </div>
+
+
+                    <strong>Удалить указаную дату:</strong>
+                    <form action="{{ url_for('delete_task') }}">
+                        <input type="text" id="fname" name="fname" value="гггг-мм-дд"><br>
+                        <div class="col-md-8 col-lg-4"> </p>
+                            <button type="submit" class="btn btn-primary">Удалить</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -98,7 +108,8 @@
        headerToolbar: {
          left: 'prev,next today',
          center: 'title',
-         right: 'dayGridMonth'
+         right: 'dayGridMonth,timeGridDay'
+
        },
       events : [
                 {% for event in events %}
@@ -108,6 +119,8 @@
                     },
                 {% endfor %}
                 ],
+              editable: true,
+      droppable: true,
     eventReceive: function(info) {
 
      //get the bits of data we want to send into a simple object
@@ -128,7 +141,33 @@
        })
        .then(response => console.log(response))
        .catch(error => console.log(error));
+   },
+
+    eventDrop: function(info) {
+
+     //get the bits of data we want to send into a simple object
+     var eventData = {
+       old_title: info.oldEvent.title,
+       old_start: info.oldEvent.startStr,
+
+       title: info.event.title,
+       start: info.event.startStr,
+     };
+     console.log(eventData);
+     //send the data via an AJAX POST request, and log any response which comes from the server
+     fetch('update', {
+         method: 'POST',
+         headers: {
+           'Accept': 'application/json'
+         },
+         body: encodeFormData(eventData),
+         dataType : 'json'
+       })
+       .then(response => console.log(response))
+       .catch(error => console.log(error));
    }
+
+
  });
  calendar.render();
 });
