@@ -60,8 +60,8 @@
 
 
                     <strong>Удалить указаную дату:</strong>
-                    <form action="{{ url_for('delete_task') }}">
-                        <input type="text" id="fname" name="fname" value="гггг-мм-дд"><br>
+                    <form action="{{ url_for('delete_task') }}" method="post">
+                        <input type="text" id="data_delete" name="data_delete" value="гггг-мм-дд"><br>
                         <div class="col-md-8 col-lg-4"> </p>
                             <button type="submit" class="btn btn-primary">Удалить</button>
                         </div>

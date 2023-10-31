@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
+from starlette.responses import RedirectResponse
 
 from api.v1.models.api_model import UsersRegistration, RequestMessage, Token
 from core.app_settings import app_settings
@@ -153,20 +154,18 @@ async def update_timetable(*,
     await timetable_repository.add(timetable)
 
 
-@router.get('/delete_task')
+@router.post('/delete_task')
 async def delete_task(*,
                       session: AsyncSession = Depends(database.get_session),
-                      username=Form()
+                      request: Request
                       ):
     timetable_repository = TimetableRepository(session)
-    # timetable = TimeTable()
-    # form_data_table = await request.form()
-    print(username)
-    # await timetable_repository.delete_by_date(form_data_table['old_start'])
-    # for data in list_data:
-    #     events.append({
-    #         'todo': random.choice(list_name),
-    #         'date': data
-    #     }
-    #     )
-    # return templates.TemplateResponse("table/admin.html", {"request": request, 'events': events})
+    form_data_table = await request.form()
+
+    print(form_data_table['data_delete'])
+    result = await timetable_repository.get_by_data(form_data_table['data_delete'])
+    if result is not None:
+        await timetable_repository.delete_by_date(form_data_table['data_delete'])
+    return RedirectResponse(
+        '/admin',
+        status_code=status.HTTP_302_FOUND)
