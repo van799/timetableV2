@@ -103,26 +103,26 @@ async def admin(*,
                 session: AsyncSession = Depends(database.get_session),
                 request: Request
                 ):
-    events_title = []
-    events_data = []
+    titles = []
+    events = []
     timetable_repository = TimetableRepository(session)
     event_repository = EventRepository(session)
 
     title_timetable = await event_repository.get_all()
     for data in title_timetable:
-        events_title.append({
+        titles.append({
             'title': data.title,
         })
     data_timetable = await timetable_repository.get_all()
     for data in data_timetable:
-        events_data.append({
+        events.append({
             'date': data.start,
             'title_name': (await event_repository.get_by_id(data.title_id)).title
         })
-    events = events_title + events_data
+
     return templates.TemplateResponse("table/admin.html",
                                       {"request": request,
-                                       'events': events})
+                                       'events': events, 'titles': titles})
 
 
 @router.get('/tasks')
@@ -177,11 +177,12 @@ async def update_timetable(*,
 
     await timetable_repository.delete_by_date(form_data_table['old_start'])
 
-    event.title = form_data_table['title']
+    event = await event_repository.get_by_title(form_data_table['title'])
+
+    timetable.title_id = event.id
     timetable.start = form_data_table['start']
 
     await timetable_repository.add(timetable)
-    await event_repository.add(event)
 
 
 @router.post('/delete_task')
@@ -192,7 +193,6 @@ async def delete_task(*,
     timetable_repository = TimetableRepository(session)
     form_data_table = await request.form()
 
-    print(form_data_table['data_delete'])
     result = await timetable_repository.get_by_data(form_data_table['data_delete'])
     if result is not None:
         await timetable_repository.delete_by_date(form_data_table['data_delete'])
