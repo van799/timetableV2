@@ -89,7 +89,7 @@
        firstDay: 1,
        height: "100",
        initialView: "dayGridMonth",
-
+       navLinks: true,
        headerToolbar: {
          left: 'prev,next today',
          center: 'title',
@@ -100,7 +100,8 @@
                 {% for event in events %}
                     {
                     title : '{{event.title_name}}',
-                    start : '{{event.date}}',
+                    start : '{{event.start}}',
+                    end   : '{{event.end}}',
                     },
                 {% endfor %}
                 ],
@@ -112,7 +113,7 @@
      var eventData = {
        title: info.event.title,
        start: info.event.startStr,
-       end: info.event.end
+       end: info.event.endStr
      };
      console.log(eventData);
      //send the data via an AJAX POST request, and log any response which comes from the server
@@ -134,9 +135,38 @@
      var eventData = {
        old_title: info.oldEvent.title,
        old_start: info.oldEvent.startStr,
+       old_end: info.oldEvent.endStr,
 
        title: info.event.title,
        start: info.event.startStr,
+       end: info.event.endStr
+     };
+     console.log(eventData);
+     //send the data via an AJAX POST request, and log any response which comes from the server
+     fetch('update', {
+         method: 'POST',
+         headers: {
+           'Accept': 'application/json'
+         },
+         body: encodeFormData(eventData),
+         dataType : 'json'
+       })
+       .then(response => console.log(response))
+       .catch(error => console.log(error));
+   },
+
+
+    eventResize: function(info) {
+
+     //get the bits of data we want to send into a simple object
+     var eventData = {
+       old_title: info.oldEvent.title,
+       old_start: info.oldEvent.startStr,
+       old_end: info.oldEvent.endStr,
+
+       title: info.event.title,
+       start: info.event.startStr,
+       end: info.event.endStr
      };
      console.log(eventData);
      //send the data via an AJAX POST request, and log any response which comes from the server

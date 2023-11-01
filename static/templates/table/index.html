@@ -34,8 +34,7 @@
                 firstDay: 1,
                 height: "100",
                 initialView: "dayGridMonth",
-
-
+                navLinks: true,
                 headerToolbar: {
                   left: 'prev,next today',
                   center: 'title',
@@ -45,7 +44,8 @@
                 {% for event in events %}
                     {
                     title : '{{event.title_name}}',
-                    start : '{{event.date}}',
+                    start : '{{event.start}}',
+                    end   : '{{event.end}}',
                     },
                 {% endfor %}
                 ]

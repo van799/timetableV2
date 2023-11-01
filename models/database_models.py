@@ -36,4 +36,5 @@ class TimeTable(CommonBase):
     __tablename__ = 'timetable'
 
     start = Column(String(100))
+    end = Column(String(100))
     title_id = Column(Text, ForeignKey("event.id"), nullable=True)

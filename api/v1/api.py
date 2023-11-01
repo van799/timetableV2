@@ -46,7 +46,8 @@ async def index(*,
     data_timetable = await timetable_repository.get_all()
     for data in data_timetable:
         events_data.append({
-            'date': data.start,
+            'start': data.start,
+            'end': data.end,
             'title_name': (await event_repository.get_by_id(data.title_id)).title
         })
     events = events_title + events_data
@@ -116,7 +117,8 @@ async def admin(*,
     data_timetable = await timetable_repository.get_all()
     for data in data_timetable:
         events.append({
-            'date': data.start,
+            'start': data.start,
+            'end': data.end,
             'title_name': (await event_repository.get_by_id(data.title_id)).title
         })
 
@@ -153,6 +155,7 @@ async def insert_timetable(*,
 
     form_data_table = await request.form()
     timetable.start = form_data_table['start']
+    timetable.end = form_data_table['end']
     title = await event_repository.get_by_title(form_data_table['title'])
     timetable.title_id = title.id
     await timetable_repository.add(timetable)
@@ -171,7 +174,6 @@ async def update_timetable(*,
     event_repository = EventRepository(session)
 
     timetable = TimeTable()
-    event = Event()
 
     form_data_table = await request.form()
 
@@ -181,6 +183,8 @@ async def update_timetable(*,
 
     timetable.title_id = event.id
     timetable.start = form_data_table['start']
+    if form_data_table['end'] is not None:
+        timetable.end = form_data_table['end']
 
     await timetable_repository.add(timetable)
 
@@ -193,9 +197,10 @@ async def delete_task(*,
     timetable_repository = TimetableRepository(session)
     form_data_table = await request.form()
 
-    result = await timetable_repository.get_by_data(form_data_table['data_delete'])
-    if result is not None:
-        await timetable_repository.delete_by_date(form_data_table['data_delete'])
+    timetables = await timetable_repository.get_all()
+    for timetable in timetables:
+        if form_data_table['data_delete'] in timetable.start:
+            await timetable_repository.delete_by_date(timetable.start)
     return RedirectResponse(
         '/admin',
         status_code=status.HTTP_302_FOUND)
@@ -219,3 +224,18 @@ async def add_task(*,
     return RedirectResponse(
         '/admin',
         status_code=status.HTTP_302_FOUND)
+
+
+@router.get('/analytics')
+async def delete_task(*,
+                      session: AsyncSession = Depends(database.get_session),
+                      request: Request
+                      ):
+    context = {
+        'all_calendar': 'all_calendar',
+        'analytics_event': 'analytics_event',
+        'analytics_workers': 'analytics_workers',
+        'charts_data': 'charts_data',
+    }
+    return templates.TemplateResponse("table/analytics.html",
+                                      {"request": request, 'context': context} )
