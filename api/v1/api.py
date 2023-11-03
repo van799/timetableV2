@@ -1,4 +1,5 @@
 import random
+from calendar import monthrange
 from datetime import datetime, timedelta
 from http.client import HTTPException
 from typing import Any
@@ -127,20 +128,38 @@ async def admin(*,
                                        'events': events, 'titles': titles})
 
 
-@router.get('/tasks')
-def find_all_tasks(request: Request):
-    events = []
-    list_name = ['name1', 'name2', 'name3', 'name4']
-    start = datetime.strptime('2023-10-01', '%Y-%m-%d')
-    end = datetime.strptime('2023-10-30', '%Y-%m-%d')
+@router.get('/auto_generated')
+async def auto_generated_timetable(*,
+                                   session: AsyncSession = Depends(database.get_session)
+                                   ):
+    timetable_repository = TimetableRepository(session)
+    event_repository = EventRepository(session)
 
-    list_data = [(start + timedelta(days=x)).strftime('%Y-%m-%d') for x in range(0, (end - start).days)]
-    for data in list_data:
-        events.append({
-            'todo': random.choice(list_name),
-            'date': data
-        })
-    return templates.TemplateResponse("table/admin.html", {"request": request, 'events': events})
+    timetable = TimeTable()
+
+    events = await event_repository.get_all()
+
+    day_month = 0
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    days = monthrange(current_year, current_month)[1]
+    start = datetime.strptime(f'{current_year}-{current_month}-01', '%Y-%m-%d')
+
+    list_data = [(start + timedelta(days=x)).strftime('%Y-%m-%d') for x in range(days)]
+    if len(events) != 0:
+        while day_month < days:
+            if day_month == 28:
+                a = 1
+            event = events[random.randint(0, len(events) - 1)]
+            timetable.title_id = event.id
+            timetable.start = list_data[day_month]
+            day_month += 1
+            await timetable_repository.add(timetable)
+
+    return RedirectResponse(
+        '/admin',
+        status_code=status.HTTP_302_FOUND)
 
 
 @router.post("/insert")
@@ -238,4 +257,4 @@ async def delete_task(*,
         'charts_data': 'charts_data',
     }
     return templates.TemplateResponse("table/analytics.html",
-                                      {"request": request, 'context': context} )
+                                      {"request": request, 'context': context})
