@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}
+Расисание дежурств
+{% endblock %}
+{% block content %}
+
+
+<style>
+    .center {
+      margin: auto;
+      width: 60%;
+      border: 3px solid #73AD21;
+      padding: 10px;
+    }
+</style>
+ <p>
+<div class="center">
+    {% for error in errors %}
+    <p style="color: red">{{ error }}</p>
+    {% endfor %}
+    <h1>Login 🫥</h1>
+    <form action="/auth/login" method="post">
+        <p>
+        <p><label for="">Email</label></p>
+        <input type="email" name="username" value="{{ username }}" required>
+        </p>
+        <p>
+        <p><label for="">Password</label></p>
+        <input type="password" name="password" value="{{ password }}" required>
+        </p>
+        <input type="submit" value="Войти">
+    </form>
+</div>
+
+
+{% endblock content %}

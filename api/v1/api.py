@@ -2,9 +2,9 @@ import random
 from calendar import monthrange
 from datetime import datetime, timedelta
 from http.client import HTTPException
-from typing import Any
+from typing import Dict
 
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Response
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
@@ -12,13 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from starlette.responses import RedirectResponse
 
-from api.v1.models.api_model import UsersRegistration, RequestMessage, Token
-from core.app_settings import app_settings
+from core.authenticate_user.form.LoginForm import LoginForm
 from models.database import Database
 from models.database_models import TimeTable, Event
 from repository.timetable_repository.event_repository import EventRepository
 from repository.timetable_repository.timetable_repository import TimetableRepository
-from repository.user_authenticator import UserAuthenticator
+
+from fastapi.security import OAuth2PasswordRequestForm
+
+from repository.user_repository.user_repository import UserRepository
 
 router = APIRouter()
 database = Database()
@@ -60,41 +62,19 @@ async def index(*,
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.post("/register",
-             response_model=RequestMessage,
-             status_code=status.HTTP_201_CREATED,
-             description='Регистрация пользователя')
-async def register(*,
-                   session: AsyncSession = Depends(database.get_session),
-                   request: UsersRegistration
-                   ) -> Any:
-    user_authenticate = UserAuthenticator(session)
-
-    if await user_authenticate.register_user(request.username, request.password):
-        return RequestMessage(message='Пользователь успешно зарегистрировался')
-    return RequestMessage(message='Такой пользователь уже существует')
-
-
-@router.post("/auth", response_model=Token)
-async def login_for_access_by_token(
-        *,
-        request: UsersRegistration,
-        session: AsyncSession = Depends(database.get_session)
-):
-    user_authenticate = UserAuthenticator(session)
-
-    user = await user_authenticate.authenticate_user(request.username, request.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя пользователя или пароль",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=app_settings.access_token_expire_minutes)
-    access_token = await UserAuthenticator.create_access_token(
-        user, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+# @router.post("/register",
+#              response_model=RequestMessage,
+#              status_code=status.HTTP_201_CREATED,
+#              description='Регистрация пользователя')
+# async def register(*,
+#                    session: AsyncSession = Depends(database.get_session),
+#                    request: UsersRegistration
+#                    ) -> Any:
+#     user_authenticate = UserAuthenticator(session)
+#
+#     if await user_authenticate.register_user(request.username, request.password):
+#         return RequestMessage(message='Пользователь успешно зарегистрировался')
+#     return RequestMessage(message='Такой пользователь уже существует')
 
 
 @router.get("/admin",
@@ -245,16 +225,49 @@ async def add_task(*,
         status_code=status.HTTP_302_FOUND)
 
 
-@router.get('/analytics')
-async def delete_task(*,
-                      session: AsyncSession = Depends(database.get_session),
-                      request: Request
-                      ):
+@router.get("/login")
+async def login_get(request: Request):
     context = {
-        'all_calendar': 'all_calendar',
-        'analytics_event': 'analytics_event',
-        'analytics_workers': 'analytics_workers',
-        'charts_data': 'charts_data',
+        "request": request,
     }
-    return templates.TemplateResponse("table/analytics.html",
-                                      {"request": request, 'context': context})
+    return templates.TemplateResponse("table/login.html", context)
+
+
+@router.post("token")
+def login_for_access_token(
+        response: Response,
+        session: AsyncSession = Depends(database.get_session),
+        form_data: OAuth2PasswordRequestForm = Depends()
+) -> Dict[str, str]:
+    user_repository = UserRepository(session)
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    access_token = create_access_token(data={"username": user.username})
+
+    # Set an HttpOnly cookie in the response. `httponly=True` prevents
+    # JavaScript from reading the cookie.
+    response.set_cookie(
+        key=settings.COOKIE_NAME,
+        value=f"Bearer {access_token}",
+        httponly=True
+    )
+    return {settings.COOKIE_NAME: access_token, "token_type": "bearer"}
+
+
+@router.post("/auth/login", response_class=HTMLResponse)
+async def login_post(request: Request):
+    form = LoginForm(request)
+    await form.load_data()
+    if await form.is_valid():
+        try:
+            response = RedirectResponse("/", status.HTTP_302_FOUND)
+            login_for_access_token(response=response, form_data=form)
+            form.__dict__.update(msg="Login Successful!")
+
+            return response
+        except HTTPException:
+            form.__dict__.update(msg="")
+            form.__dict__.get("errors").append("Incorrect Email or Password")
+            return templates.TemplateResponse("login.html", form.__dict__)
+    return templates.TemplateResponse("login.html", form.__dict__)
